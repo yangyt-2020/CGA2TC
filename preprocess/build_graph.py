@@ -20,9 +20,9 @@ parser.add_argument('--dataset', type=str, default='ohsumed',
                     help='ohsumed/R8/R52/mr/ag_news')
 parser.add_argument('--aug', type=float, default=1,
                     help='Select whether to delete edges,0:no;1:yes')                                   
-parser.add_argument('--PMI_size', type=float, default=0.05,
+parser.add_argument('--PMI_size', type=float, default=0.01,
                     help='select PMI topk(0.01) value')
-parser.add_argument('--TF_IDF_size', type=float, default=0.015,
+parser.add_argument('--TF_IDF_size', type=float, default=0.01,
                     help='select TF-IDF topk(0.001) value')                                
 parser.add_argument('--sample_size', type=float, default=1,
                     help='sample size')
