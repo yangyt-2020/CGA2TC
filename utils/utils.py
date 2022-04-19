@@ -520,8 +520,7 @@ def compute_pr(edge_index, damp: float = 0.85, k: int = 10):
 
 def drop_edge_weighted(edge_index, edge_weights, p: float, threshold: float = 1.):
     
-    edge_weights = edge_weights / edge_weights.mean() * p #max(edge_weights)=0.699999988079071
-    #import ipdb;ipdb.set_trace()
+    edge_weights = edge_weights / edge_weights.mean() * p
     edge_weights = edge_weights.where(edge_weights < threshold, torch.ones_like(edge_weights) * threshold)
     #edge_weights = edge_weights.where(edge_weights < threshold, torch.ones_like(edge_weights)*0.8)
     
