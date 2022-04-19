@@ -20,5 +20,5 @@ This is the source code of paper ["Contrastive Graph Convolutional Networks with
 6. Replace `<dataset>` with `R8`, `R52`, `ohsumed` or `mr`
 
 
-##Cite
+## Cite
 
