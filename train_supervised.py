@@ -38,8 +38,8 @@ if dataset not in datasets:
 cfg.dataset = dataset
 
 param = {
-        'drop_edge_rate_1': 0.3,
-        'drop_edge_rate_2': 0.4,
+        'drop_edge_rate_1': 0.2,
+        'drop_edge_rate_2': 0.6,
         'drop_scheme': cfg.param,
 }
 
@@ -213,15 +213,8 @@ for epoch in range(cfg.epochs):
 
 print_log("Optimization Finished!")
 test_loss, test_acc, pred, labels, test_duration,test_mask_logits,test_label = evaluate(model,criterion,t_features, t_y_test, test_mask)
-print(test_acc)
+print_log("Test set results: \n\t loss= {:.5f}, accuracy= {:.5f}, time= {:.5f}".format(test_loss, test_acc, test_duration))
 
-
-_,recall,f1,_ = metrics.precision_recall_fscore_support(np.argmax(test_label[(t_test_mask>0).cpu().numpy()],1),np.argmax(test_mask_logits[(t_test_mask>0).cpu().numpy()],1), average='macro')
-test_acc_total_recall[tt] = recall
-test_acc_total_f1[tt] = f1
-print_log("Test set results: \n\t loss= {:.5f}, accuracy= {:.5f}, time= {:.5f}".format(test_loss, test_acc_total[tt], test_duration))
-print("recall set results: recall= {:.5f}".format(test_acc_total_recall[tt]))
-print("f1 set results:  f1 = {:.5f}".format(test_acc_total_f1[tt]))
 
 
 
