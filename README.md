@@ -1,7 +1,7 @@
 ##
 This is the source code of paper ["Contrastive Graph Convolutional Networks with Adaptive Augmentation for Text Classification"]
 <div align="center">    
-<img src="https://github.com/yangyt-2020/CGA2TC/blob/main/src/model.pdf?raw=true" width="500px" height="400px" alt="model.pdf" align=center />
+<img src="https://github.com/yangyt-2020/CGA2TC/blob/main/src/model.png?raw=true" width="500px" height="400px" alt="model.png" align=center />
 </div>
 
 ## Require
