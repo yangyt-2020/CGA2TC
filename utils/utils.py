@@ -121,171 +121,6 @@ def load_data(dataset_str):
     y_test[test_mask, :] = labels[test_mask, :]
 
     return adj, features, y_train, y_val, y_test, train_mask, val_mask, test_mask
-
-def load_corpus_semi(dataset_str):
-    """
-    Loads input corpus from gcn/data directory
-
-    ind.dataset_str.x => the feature vectors of the training docs as scipy.sparse.csr.csr_matrix object;
-    ind.dataset_str.tx => the feature vectors of the test docs as scipy.sparse.csr.csr_matrix object;
-    ind.dataset_str.allx => the feature vectors of both labeled and unlabeled training docs/words
-        (a superset of ind.dataset_str.x) as scipy.sparse.csr.csr_matrix object;
-    ind.dataset_str.y => the one-hot labels of the labeled training docs as numpy.ndarray object;
-    ind.dataset_str.ty => the one-hot labels of the test docs as numpy.ndarray object;
-    ind.dataset_str.ally => the labels for instances in ind.dataset_str.allx as numpy.ndarray object;
-    ind.dataset_str.adj => adjacency matrix of word/doc nodes as scipy.sparse.csr.csr_matrix object;
-    ind.dataset_str.train.index => the indices of training docs in original doc list.
-
-    All objects above must be saved using python pickle module.
-
-    :param dataset_str: Dataset name
-    :return: All data input files loaded (as well the training/test data).
-    """
-
-    names = ['x', 'y', 'tx', 'ty', 'allx', 'ally', 'adj']
-    objects = []
-    print("./data_gai/ind.{}".format(dataset_str))
-    for i in range(len(names)):
-        with open("./data_gai/ind.{}.{}".format(dataset_str, names[i]), 'rb') as f:
-            if sys.version_info > (3, 0):
-                objects.append(pkl.load(f, encoding='latin1'))
-            else:
-                objects.append(pkl.load(f))
-
-    x, y, tx, ty, allx, ally, adj = tuple(objects)
-    # print(x.shape, y.shape, tx.shape, ty.shape, allx.shape, ally.shape)
-
-    features = sp.vstack((allx, tx)).tolil()
-    labels = np.vstack((ally, ty))
-    #print(len(labels))
-    
-   
-    y_all = torch.max(torch.from_numpy(labels),1)[1]
-    
-    train_idx_orig = parse_index_file(
-        "./data/{}.train.index".format(dataset_str))
-    train_size_sup = len(train_idx_orig)
-    val_size_sup = train_size_sup - x.shape[0]
-    
-    y_len = torch.from_numpy(labels)
-    y_list = torch.max(y_len,1)[1].numpy().tolist()
-    y_len = len(set(torch.max(y_len,1)[1].numpy()))
-    
-    index_train = []
-    index_val = []
-    #从全部doc选len(train_idx_orig)+allx.shape[0],allx.shape[0]+tx.shape[0])、、
-    seed = random.randint(1, 200)
-    seed = 2019
-    random.seed(seed)
-    class_num = 40
-    for i_label in range(y_len):
-       index_sub = [i for i,x in enumerate(y_list) if x==i_label and i not in range(train_size_sup,allx.shape[0])]#train/val index
-       if len(index_sub) < class_num:
-           sub_size =  len(index_sub)*0.5
-           index_sub = random.sample(index_sub,int(sub_size))
-           index_train += random.sample(index_sub,int(int(sub_size)/2))
-           index_val += [i for i in index_sub if i not in index_train]
-       else:
-           index_sub = random.sample(index_sub,class_num)
-           index_train += random.sample(index_sub,int(class_num/2))
-           index_val += [i for i in index_sub if i not in index_train]
-           #import ipdb; ipdb.set_trace()
-           #
-           #index_train += index_sub[:20]
-           #index_val += index_sub[20:]2668, 5784, 29325, 94, 5402,
-    index_train.sort()
-    #print(index_train)
-    index_val.sort()
-    index_train_val = index_val + index_train
-   
-    #test_size = tx.shape[0]
-    #index_test = [i for i in range(len(train_idx_orig)) if i not in index_train_val] + [j for j in range(allx.shape[0],allx.shape[0]+tx.shape[0]) if j not in index_train_val]
-    index_test1 = list(set(range(train_size_sup)).union(set(range(allx.shape[0],allx.shape[0]+tx.shape[0]))))
-    index_test = list(set(index_test1)^set(index_train_val))
-    #import ipdb; ipdb.set_trace()
-    train_size = len(index_train)
-    val_size = len(index_val)
-    test_size = len(index_test)
-    print(train_size,val_size,test_size)
-    
-    train_mask = sample_mask(index_train, labels.shape[0])#array([ True,  True,  True, ..., False, False, False])
-    val_mask = sample_mask(index_val, labels.shape[0])
-    test_mask = sample_mask(index_test, labels.shape[0])
-    
-    y_train = np.zeros(labels.shape)
-    y_val = np.zeros(labels.shape)
-    y_test = np.zeros(labels.shape)
-    y_train[train_mask, :] = labels[train_mask, :]
-    y_val[val_mask, :] = labels[val_mask, :]
-    y_test[test_mask, :] = labels[test_mask, :]
-    #import ipdb; ipdb.set_trace()
-    adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
-
-    return adj, features, y_train, y_val, y_test, train_mask, val_mask, test_mask, train_size, test_size
-
-def load_corpus_HGAT(dataset_str):
-    names = ['x', 'y', 'tx', 'ty', 'allx', 'ally', 'adj']
-    objects = []
-    print("./data_gai/ind.{}".format(dataset_str))
-    for i in range(len(names)):
-        with open("./data_gai/ind.{}.{}".format(dataset_str, names[i]), 'rb') as f:
-            if sys.version_info > (3, 0):
-                objects.append(pkl.load(f, encoding='latin1'))
-            else:
-                objects.append(pkl.load(f))
-
-    x, y, tx, ty, allx, ally, adj = tuple(objects)
-    # print(x.shape, y.shape, tx.shape, ty.shape, allx.shape, ally.shape)
-
-    features = sp.vstack((allx, tx)).tolil()
-    labels = np.vstack((ally, ty))
-    #print(len(labels))
-    
-   
-    y_all = torch.max(torch.from_numpy(labels),1)[1]
-    
-    train_idx_orig = parse_index_file(
-        "./data/{}.train.index".format(dataset_str))
-    train_size_sup = len(train_idx_orig)
-    val_size_sup = train_size_sup - x.shape[0]
-    
-    y_len = torch.from_numpy(labels)
-    y_list = torch.max(y_len,1)[1].numpy().tolist()
-    y_len = len(set(torch.max(y_len,1)[1].numpy()))
-    
-    index_train = []
-    index_val = []
-    import ipdb; ipdb.set_trace()
-    
-    index_train.sort()
-   
-    index_val.sort()
-    index_train_val = index_val + index_train
-   
-    #test_size = tx.shape[0]
-    #index_test = [i for i in range(len(train_idx_orig)) if i not in index_train_val] + [j for j in range(allx.shape[0],allx.shape[0]+tx.shape[0]) if j not in index_train_val]
-    index_test1 = list(set(range(train_size_sup)).union(set(range(allx.shape[0],allx.shape[0]+tx.shape[0]))))
-    index_test = list(set(index_test1)^set(index_train_val))
-    #import ipdb; ipdb.set_trace()
-    train_size = len(index_train)
-    val_size = len(index_val)
-    test_size = len(index_test)
-    print(train_size,val_size,test_size)
-    
-    train_mask = sample_mask(index_train, labels.shape[0])#array([ True,  True,  True, ..., False, False, False])
-    val_mask = sample_mask(index_val, labels.shape[0])
-    test_mask = sample_mask(index_test, labels.shape[0])
-    
-    y_train = np.zeros(labels.shape)
-    y_val = np.zeros(labels.shape)
-    y_test = np.zeros(labels.shape)
-    y_train[train_mask, :] = labels[train_mask, :]
-    y_val[val_mask, :] = labels[val_mask, :]
-    y_test[test_mask, :] = labels[test_mask, :]
-    #import ipdb; ipdb.set_trace()
-    adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
-
-    return adj, features, y_train, y_val, y_test, train_mask, val_mask, test_mask, train_size, test_size
 def load_corpus(dataset_str):
     """
     Loads input corpus from gcn/data directory
@@ -304,7 +139,6 @@ def load_corpus(dataset_str):
     :param dataset_str: Dataset name
     :return: All data input files loaded (as well the training/test data).
     """
-
     names = ['x', 'y', 'tx', 'ty', 'allx', 'ally', 'adj']
     objects = []
     print("./data_gai/ind.{}".format(dataset_str))
@@ -316,7 +150,7 @@ def load_corpus(dataset_str):
                 objects.append(pkl.load(f))
 
     x, y, tx, ty, allx, ally, adj = tuple(objects)
-    #import ipdb;ipdb.set_trace()
+  
     # print(x.shape, y.shape, tx.shape, ty.shape, allx.shape, ally.shape)
 
     features = sp.vstack((allx, tx)).tolil()
@@ -378,11 +212,6 @@ def preprocess_features(features):
     features = r_mat_inv.dot(features)
     # return sparse_to_tuple(features)
     return features.A
-
-
-
-
-
 def normalize_adj(adj):
     """Symmetrically normalize adjacency matrix."""
     adj = sp.coo_matrix(adj)
@@ -505,59 +334,7 @@ def drop_feature(x, drop_prob):
     drop_mask = torch.empty((x.size(1),), dtype=torch.float32, device=x.device).uniform_(0, 1) < drop_prob
     x = x.clone()
     x[:, drop_mask] = 0
-
     return x
-def compute_pr(edge_index, damp: float = 0.85, k: int = 10):
-    num_nodes = edge_index.max().item() + 1
-    deg_out = degree(edge_index[0])
-    x = torch.ones((num_nodes, )).to(edge_index.device).to(torch.float32)
-
-    for i in range(k):
-        edge_msg = x[edge_index[0]] / deg_out[edge_index[0]]
-        agg_msg = scatter(edge_msg, edge_index[1], reduce='sum')
-        x = (1 - damp) * x + damp * agg_msg
-    return x
-
-def drop_edge_weighted(edge_index, edge_weights, p: float, threshold: float = 1.):
-    
-    edge_weights = edge_weights / edge_weights.mean() * p
-    edge_weights = edge_weights.where(edge_weights < threshold, torch.ones_like(edge_weights) * threshold)
-    #edge_weights = edge_weights.where(edge_weights < threshold, torch.ones_like(edge_weights)*0.8)
-    
-    sel_mask = torch.bernoulli(1. - edge_weights).to(torch.bool)
-    edge_index_bian = edge_index[0][:, sel_mask]
-    edge_index_value = edge_index[1][sel_mask]
-    support = [to_dense_adj(edge_index_bian,edge_attr=edge_index_value)[0].cuda()]
-    return support
-
-def degree_drop_weights(edge_index):
-    #import ipdb;ipdb.set_trace()
-    edge_index_ = to_undirected(edge_index)
-    deg = degree(edge_index_[1])
-    deg_col = deg[edge_index[1]].to(torch.float32)
-    s_col = torch.log(deg_col)
-    weights = (s_col.max() - s_col) / (s_col.max() - s_col.mean())
-    return weights
-def pr_drop_weights(edge_index, aggr: str = 'sink', k: int = 10):
-    pv = compute_pr(edge_index, k=k)
-    pv_row = pv[edge_index[0]].to(torch.float32)
-    pv_col = pv[edge_index[1]].to(torch.float32)
-    s_row = torch.log(pv_row)
-    s_col = torch.log(pv_col)
-    if aggr == 'sink':
-        s = s_col
-    elif aggr == 'source':
-        s = s_row
-    elif aggr == 'mean':
-        s = (s_col + s_row) * 0.5
-    else:
-        s = s_col
-    weights = (s.max() - s) / (s.max() - s.mean())
-
-    return weights
-
-
-
 #drop feature
 
 def drop_adj(x, drop_prob):
