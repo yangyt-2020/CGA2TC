@@ -100,16 +100,16 @@ tm_val_mask = torch.transpose(torch.unsqueeze(t_val_mask, 0), 1, 0).repeat(1, t_
 t_test_mask = torch.from_numpy(np.array(test_mask * 1., dtype=np.float32)).cuda()
 tm_test_mask = torch.transpose(torch.unsqueeze(t_test_mask, 0), 1, 0).repeat(1, t_y_test.shape[1]).cuda()
 
-doc_mask = t_train_mask + t_val_mask + t_test_mask  # 全部文档节点用于CL_loss#ohsumed:7400/21060
+doc_mask = t_train_mask + t_val_mask + t_test_mask 
 doc_mask = doc_mask > 0
 doc_mask = doc_mask.cuda()
-train_labels_all = torch.max(t_y_train, 1)[1]#3022/21060
+train_labels_all = torch.max(t_y_train, 1)[1]
 val_labels_all = torch.max(t_y_val, 1)[1]
 test_labels_all = torch.max(t_y_test, 1)[1]
 
-train_labels_all = train_labels_all.cuda()#3022/21060
-val_labels_all = val_labels_all.cuda()#355
-test_labels_all = test_labels_all.cuda()#4043
+train_labels_all = train_labels_all.cuda()
+val_labels_all = val_labels_all.cuda()
+test_labels_all = test_labels_all.cuda()
 
 train_labels = train_labels_all[t_train_mask.cpu() > 0]
 val_labels = val_labels_all[t_val_mask.cpu() > 0]
@@ -123,21 +123,18 @@ if cfg.single_positive_example == 0:
     mask = torch.eq(train_labels, train_labels.T).float().cuda()  # train labels as pos/neg examples
     mask_all[:len(mask),:len(mask)]=mask
     
-    mask_train = mask_all[doc_mask]  #[7400, 21060]
-    mask_train = mask_train[:, doc_mask]  #[7400,7400]
+    mask_train = mask_all[doc_mask]  
+    mask_train = mask_train[:, doc_mask] 
     #mask_train = torch.eye(len(mask_train))
-    mask_train = torch.max(mask_train, torch.eye(len(mask_train)))  # 对角线，val\test以本身为例
-    #import ipdb;ipdb.set_trace()
-else:
-    mask_train = torch.eye(sum(doc_mask))
+    mask_train = torch.max(mask_train, torch.eye(len(mask_train)))  
     #import ipdb;ipdb.set_trace()
 t_support = []
 for i in range(len(support)):
     t_support.append(torch.Tensor(support[i]).cuda())
 if dataset=="20ng":#OOM
-    edge_index_self = dense_to_sparse(t_support[0].cpu())#(边集,权值)
+    edge_index_self = dense_to_sparse(t_support[0].cpu())
 else:
-    edge_index_self = dense_to_sparse(t_support[0])#(边集,权值)
+    edge_index_self = dense_to_sparse(t_support[0])
 if param['drop_scheme'] == 'degree':
     drop_weights = degree_drop_weights(edge_index_self[0])
     drop_weights = drop_weights.cuda()
@@ -177,11 +174,10 @@ def evaluate(model,criterion,features, labels, mask):
 
 model = model_func(input_dim=features.shape[0],support=t_support, num_hidden_conv=cfg.hidden1,dropout_rate=cfg.dropout,encoder_type=cfg.encoder_type,second_hidn=cfg.second_hidn,num_classes=y_train.shape[1])
 model = model.cuda()
-#import ipdb;ipdb.set_trace()
+
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=cfg.learning_rate,weight_decay=cfg.weight_decay)
 # Define model evaluation function
-val_losses = []
 #Train model
 for epoch in range(cfg.epochs):
     model.train()
@@ -207,7 +203,6 @@ for epoch in range(cfg.epochs):
     loss.backward()
     optimizer.step()
     val_loss, val_acc, pred, labels, duration,_ ,_= evaluate(model,criterion,t_features, t_y_val, val_mask)
-    val_losses.append(val_loss)
     print_log("Epoch: {:3.0f} t_loss= {:.5f} t_acc= {:.4f} v_loss= {:.5f} v_acc= {:.5f} time= {:.4f}"\
                 .format(epoch + 1, loss, acc, val_loss, val_acc, time.time() - t))
 
