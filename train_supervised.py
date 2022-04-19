@@ -49,14 +49,7 @@ param = {
 
 start = time.time()
 #Load data
-if cfg.semi == 0:
-    adj, features, y_train, y_val, y_test, train_mask, val_mask, test_mask, train_size, test_size = load_corpus(
-      cfg.dataset)
-elif cfg.semi==1:
-    adj, features, y_train, y_val, y_test, train_mask, val_mask, test_mask, train_size, test_size = load_corpus_semi(
-      cfg.dataset)
-else:
-    adj, features, y_train, y_val, y_test, train_mask, val_mask, test_mask, train_size, test_size = load_corpus_HGAT(
+adj, features, y_train, y_val, y_test, train_mask, val_mask, test_mask, train_size, test_size = load_corpus(
       cfg.dataset)
 features = sp.identity(features.shape[0])  # featureless
 # Some preprocessing
@@ -71,7 +64,7 @@ elif cfg.model == 'APPNP':
 elif cfg.model == 'GAT':
     support = [preprocess_adj(adj)]
     model_func = spGAT
-elif cfg.model == 'GraphSage':####
+elif cfg.model == 'GraphSage':
     support = [preprocess_adj(adj)]
     model_func = GraphSAGE  
 elif cfg.model == 'GRU':
