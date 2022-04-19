@@ -336,6 +336,59 @@ def drop_feature(x, drop_prob):
     x[:, drop_mask] = 0
     return x
 #drop feature
+def compute_pr(edge_index, damp: float = 0.85, k: int = 10):
+    num_nodes = edge_index.max().item() + 1
+    deg_out = degree(edge_index[0])
+    x = torch.ones((num_nodes, )).to(edge_index.device).to(torch.float32)
+
+    for i in range(k):
+        edge_msg = x[edge_index[0]] / deg_out[edge_index[0]]
+        agg_msg = scatter(edge_msg, edge_index[1], reduce='sum')
+        x = (1 - damp) * x + damp * agg_msg
+    return x
+
+def drop_edge_weighted(edge_index, edge_weights, p: float, threshold: float = 1.):
+    
+    edge_weights = edge_weights / edge_weights.mean() * p #max(edge_weights)=0.699999988079071
+    #import ipdb;ipdb.set_trace()
+    edge_weights = edge_weights.where(edge_weights < threshold, torch.ones_like(edge_weights) * threshold)
+    #edge_weights = edge_weights.where(edge_weights < threshold, torch.ones_like(edge_weights)*0.8)
+    
+    sel_mask = torch.bernoulli(1. - edge_weights).to(torch.bool)
+    edge_index_bian = edge_index[0][:, sel_mask]
+    edge_index_value = edge_index[1][sel_mask]
+    support = [to_dense_adj(edge_index_bian,edge_attr=edge_index_value)[0].cuda()]
+    return support
+
+def degree_drop_weights(edge_index):
+    #import ipdb;ipdb.set_trace()
+    edge_index_ = to_undirected(edge_index)
+    deg = degree(edge_index_[1])
+    deg_col = deg[edge_index[1]].to(torch.float32)
+    s_col = torch.log(deg_col)
+    weights = (s_col.max() - s_col) / (s_col.max() - s_col.mean())
+    return weights
+def pr_drop_weights(edge_index, aggr: str = 'sink', k: int = 10):
+    pv = compute_pr(edge_index, k=k)
+    pv_row = pv[edge_index[0]].to(torch.float32)
+    pv_col = pv[edge_index[1]].to(torch.float32)
+    s_row = torch.log(pv_row)
+    s_col = torch.log(pv_col)
+    if aggr == 'sink':
+        s = s_col
+    elif aggr == 'source':
+        s = s_row
+    elif aggr == 'mean':
+        s = (s_col + s_row) * 0.5
+    else:
+        s = s_col
+    weights = (s.max() - s) / (s.max() - s.mean())
+
+    return weights
+
+
+
+#drop feature
 
 def drop_adj(x, drop_prob):
     drop_mask = torch.empty(
@@ -346,6 +399,7 @@ def drop_adj(x, drop_prob):
     x[:, drop_mask] = 0
     #import ipdb;ipdb.set_trace()
     return x
+
 #GraphCL no use (Long time)
 def aug_random_edge(input_adj, drop_percent=0.2):
     import ipdb;ipdb.set_trace()
