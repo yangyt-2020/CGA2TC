@@ -1,6 +1,5 @@
 ##
-This is the source code of paper "Contrastive Graph Convolutional Networks with
-Adaptive Augmentation for Text Classification"
+This is the source code of paper ["Contrastive Graph Convolutional Networks with Adaptive Augmentation for Text Classification"]
 <div align="center">    
 <img src="https://github.com/yangyt-2020/CGA2TC/src/model.pdf?raw=true" width="500px" height="400px" alt="model.pdf" align=center />
 </div>
