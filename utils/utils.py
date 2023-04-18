@@ -336,16 +336,6 @@ def drop_feature(x, drop_prob):
     x[:, drop_mask] = 0
     return x
 #drop feature
-def compute_pr(edge_index, damp: float = 0.85, k: int = 10):
-    num_nodes = edge_index.max().item() + 1
-    deg_out = degree(edge_index[0])
-    x = torch.ones((num_nodes, )).to(edge_index.device).to(torch.float32)
-
-    for i in range(k):
-        edge_msg = x[edge_index[0]] / deg_out[edge_index[0]]
-        agg_msg = scatter(edge_msg, edge_index[1], reduce='sum')
-        x = (1 - damp) * x + damp * agg_msg
-    return x
 
 def drop_edge_weighted(edge_index, edge_weights, p: float, threshold: float = 1.):
     
@@ -368,25 +358,6 @@ def degree_drop_weights(edge_index):
     s_col = torch.log(deg_col)
     weights = (s_col.max() - s_col) / (s_col.max() - s_col.mean())
     return weights
-def pr_drop_weights(edge_index, aggr: str = 'sink', k: int = 10):
-    pv = compute_pr(edge_index, k=k)
-    pv_row = pv[edge_index[0]].to(torch.float32)
-    pv_col = pv[edge_index[1]].to(torch.float32)
-    s_row = torch.log(pv_row)
-    s_col = torch.log(pv_col)
-    if aggr == 'sink':
-        s = s_col
-    elif aggr == 'source':
-        s = s_row
-    elif aggr == 'mean':
-        s = (s_col + s_row) * 0.5
-    else:
-        s = s_col
-    weights = (s.max() - s) / (s.max() - s.mean())
-
-    return weights
-
-
 
 #drop feature
 
