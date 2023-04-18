@@ -336,7 +336,7 @@ def drop_feature(x, drop_prob):
     x[:, drop_mask] = 0
     return x
 #drop feature
-
+#xxx
 def drop_edge_weighted(edge_index, edge_weights, p: float, threshold: float = 1.):
     
     edge_weights = edge_weights / edge_weights.mean() * p #max(edge_weights)=0.699999988079071
